@@ -211,11 +211,15 @@ INF-06". Quedan así:
   la latencia de cada handler. Un consumer con handlers lentos puede bajarlo
   con `Subscription.Prefetch`.
 - **3 reintentos, backoff exponencial de 200 ms a 5 s, con jitter.** Cubre el
-  caso típico —una dependencia que parpadea— sin dejar un evento dando
-  vueltas más de ~6 segundos antes de la DLQ. El jitter importa porque el
-  fallo transitorio típico es una dependencia compartida caída: sin él, las N
-  instancias reintentan todas en el mismo instante y le pegan al recurso
-  justo cuando se está recuperando.
+  caso típico —una dependencia que parpadea— con una espera acotada: los tres
+  backoffs son 200, 400 y 800 ms, así que un evento espera **1,4 s como
+  máximo** antes de la DLQ, más lo que tarden sus cuatro ejecuciones del
+  handler. Con el jitter cada espera cae entre la mitad y el total, así que
+  el piso son 700 ms. El techo de 5 s no llega a aplicar con 3 reintentos:
+  está para el consumer que suba `PUBSUB_MAX_RETRIES`. El jitter importa
+  porque el fallo transitorio típico es una dependencia compartida caída: sin
+  él, las N instancias reintentan todas en el mismo instante y le pegan al
+  recurso justo cuando se está recuperando.
 - **El reintento es en proceso**, y recién al agotarse el mensaje se rechaza
   hacia el dead-letter exchange. ADR-0003 mencionaba una cola de retry con
   TTL + DLX; se implementó lo que dice el contrato de eventos de INF-02, que
