@@ -12,14 +12,22 @@ from discordia_pubsub.envelope import (
     new_envelope,
     with_data,
 )
+from discordia_pubsub.errors import ClosedError, PermanentError, is_permanent, permanent
+from discordia_pubsub.retry import Handler, RetryPolicy
 
 __all__ = [
-    "Config",
     "DEFAULT_EVENT_VERSION",
+    "ClosedError",
+    "Config",
     "Envelope",
+    "Handler",
     "InvalidConfigError",
     "InvalidEnvelopeError",
+    "PermanentError",
+    "RetryPolicy",
+    "is_permanent",
     "load_config",
     "new_envelope",
+    "permanent",
     "with_data",
 ]
