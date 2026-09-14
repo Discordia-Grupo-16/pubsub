@@ -4,6 +4,7 @@ Espejo en Python del cliente Go: mismo envelope, mismas variables de entorno
 y las mismas dos semánticas de cola.
 """
 
+from discordia_pubsub.client import Client, connect
 from discordia_pubsub.config import Config, InvalidConfigError, load_config
 from discordia_pubsub.envelope import (
     DEFAULT_EVENT_VERSION,
@@ -24,6 +25,7 @@ from discordia_pubsub.topology import (
 
 __all__ = [
     "DEFAULT_EVENT_VERSION",
+    "Client",
     "ClosedError",
     "Config",
     "Envelope",
@@ -35,6 +37,7 @@ __all__ = [
     "QueueSpec",
     "RetryPolicy",
     "Subscription",
+    "connect",
     "is_permanent",
     "load_config",
     "new_envelope",
