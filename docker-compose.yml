@@ -1,11 +1,12 @@
-# Broker para los tests de integración de este repositorio.
+# Broker para los tests de integración y runner de la suite de Python.
 #
 # No es el entorno local del sistema —ese es el docker-compose compartido de
 # INF-05, con las bases de cada servicio—: acá solo hace falta RabbitMQ para
 # poder verificar el cliente contra un broker real.
 #
-#   docker compose up -d
-#   make test-integration
+#   docker compose up -d          # levanta el broker
+#   make test-integration         # suite de Go contra el broker
+#   make test-python              # suite de Python, sin instalar nada en la máquina
 services:
   rabbitmq:
     image: rabbitmq:4-management
@@ -18,3 +19,28 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # Corre la suite de Python contra el broker sin pedir un intérprete ni un
+  # venv en la máquina de nadie. Está bajo un profile para que
+  # `docker compose up -d` levante solo el broker.
+  python-tests:
+    image: python:3.13-slim
+    profiles: ["tools"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    working_dir: /repo/python
+    volumes:
+      - .:/repo
+    environment:
+      RABBITMQ_URL: amqp://rabbitmq:5672/
+      PYTHONPATH: /repo/python
+      # No escribir nada dentro del repo montado: ni .pyc, ni caché de
+      # pytest, ni un egg-info con dueño equivocado.
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_ADDOPTS: "-p no:cacheprovider"
+      PIP_ROOT_USER_ACTION: ignore
+    command:
+      - sh
+      - -c
+      - pip install -q aio-pika pytest pytest-asyncio pytest-cov && pytest -q --cov=discordia_pubsub --cov-report=term-missing

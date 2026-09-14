@@ -1,4 +1,4 @@
-.PHONY: test test-cover test-integration broker-up broker-down
+.PHONY: test test-cover test-integration test-python test-all broker-up broker-down
 
 # Los tests de integración se saltan solos si no hay un broker alcanzable, así
 # que `make test` anda igual sin Docker levantado.
@@ -16,12 +16,19 @@ test-cover:
 	go test ./... -coverprofile=coverage.out -covermode=atomic
 	go tool cover -func=coverage.out
 
-# Suite completa contra el RabbitMQ de docker-compose.
+# Suite de Go contra el RabbitMQ de docker-compose.
 test-integration: broker-up
 	go test ./... -count=1 -race
 
+# Suite de Python en un container, para no pedir un intérprete ni un venv en la
+# máquina de nadie.
+test-python:
+	docker compose run --rm python-tests
+
+test-all: test-integration test-python
+
 broker-up:
-	docker compose up -d --wait
+	docker compose up -d --wait rabbitmq
 
 broker-down:
 	docker compose down
