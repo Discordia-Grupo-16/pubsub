@@ -1,0 +1,20 @@
+# Broker para los tests de integración de este repositorio.
+#
+# No es el entorno local del sistema —ese es el docker-compose compartido de
+# INF-05, con las bases de cada servicio—: acá solo hace falta RabbitMQ para
+# poder verificar el cliente contra un broker real.
+#
+#   docker compose up -d
+#   make test-integration
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: discordia-pubsub-rabbitmq
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # management UI: http://localhost:15672 (guest/guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

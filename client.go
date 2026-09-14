@@ -209,10 +209,12 @@ func (c *Client) supervise() {
 		select {
 		case <-c.shutdown:
 			return
-		case reason, ok := <-closed:
-			if !ok {
-				return
-			}
+		case reason := <-closed:
+			// El canal trae un error cuando la conexión se corta sola, y se
+			// cierra sin más cuando la cerró el broker o el otro extremo.
+			// En los dos casos la conexión ya no sirve: lo único que
+			// distingue "hay que reconectar" de "hay que terminar" es si
+			// este cliente se está cerrando.
 			select {
 			case <-c.shutdown:
 				return
