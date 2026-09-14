@@ -14,6 +14,13 @@ from discordia_pubsub.envelope import (
 )
 from discordia_pubsub.errors import ClosedError, PermanentError, is_permanent, permanent
 from discordia_pubsub.retry import Handler, RetryPolicy
+from discordia_pubsub.topology import (
+    InvalidSubscriptionError,
+    QueueSpec,
+    Subscription,
+    per_instance_queue,
+    shared_queue,
+)
 
 __all__ = [
     "DEFAULT_EVENT_VERSION",
@@ -23,11 +30,16 @@ __all__ = [
     "Handler",
     "InvalidConfigError",
     "InvalidEnvelopeError",
+    "InvalidSubscriptionError",
     "PermanentError",
+    "QueueSpec",
     "RetryPolicy",
+    "Subscription",
     "is_permanent",
     "load_config",
     "new_envelope",
+    "per_instance_queue",
     "permanent",
+    "shared_queue",
     "with_data",
 ]
