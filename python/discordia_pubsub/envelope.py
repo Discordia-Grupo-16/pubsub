@@ -91,11 +91,14 @@ class Envelope:
             "eventVersion": self.event_version,
             "occurredAt": _format_timestamp(self.occurred_at),
             "correlationId": self.correlation_id,
-            "producer": self.producer,
-            "data": self.data,
         }
+        # Mismo orden de claves que el cliente Go: los dos lados emiten un
+        # JSON que se lee igual, y los fixtures de interoperabilidad se
+        # comparan de un vistazo.
         if self.causation_id:
             payload["causationId"] = self.causation_id
+        payload["producer"] = self.producer
+        payload["data"] = self.data
         return payload
 
     def to_json(self) -> bytes:
