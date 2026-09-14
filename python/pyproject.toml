@@ -1,0 +1,20 @@
+[project]
+name = "discordia-pubsub"
+version = "0.1.0"
+description = "Cliente compartido de Pub/Sub sobre RabbitMQ para los servicios Python de Discordia"
+requires-python = ">=3.11"
+dependencies = ["aio-pika>=9.4,<11"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "pytest-cov>=5"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["discordia_pubsub*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
