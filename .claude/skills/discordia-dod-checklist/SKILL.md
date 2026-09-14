@@ -1,42 +1,44 @@
 ---
 name: discordia-dod-checklist
-description: Checklist de Definition of Done y de pre-PR del equipo Discordia, aplicado a discordia-chat — cobertura, secretos, catálogo de eventos, contrato OpenAPI, docker-compose, README. Usar antes de pedir review de un PR o al dar una historia por terminada.
+description: Checklist de Definition of Done y de pre-PR del equipo Discordia, aplicado al cliente compartido de Pub/Sub — paridad entre los dos lenguajes, cobertura con el broker levantado, secretos, fixtures de interoperabilidad y README. Usar antes de pedir review de un PR o al dar una historia por terminada.
 ---
 
-# Checklist antes de pedir review / dar una historia por terminada
+# Checklist antes de pedir review
 
 Fuente: `discordia-docs/procesos/definition-of-done.md` y
 `procesos/git-workflow.md`.
+
+## Propio de este repo
+
+- [ ] **Paridad entre los dos clientes.** Un cambio de comportamiento en Go
+      va también en Python, en el mismo PR. Los servicios de los dos
+      lenguajes tienen que ver el mismo bus.
+- [ ] Si cambió la forma del JSON del sobre, se regeneraron los fixtures de
+      `testdata/` y pasan los tests de interoperabilidad de los dos lados.
+- [ ] Si se agregó una variable de entorno, está en `.env.example`, en la
+      tabla del README y en los dos clientes con el mismo nombre y el mismo
+      default.
+- [ ] Si se tocó la declaración de colas, los tests que distinguen cola
+      compartida de cola por instancia siguen en verde **sin aflojar la
+      aserción** (ver `discordia-rabbitmq-topology`).
 
 ## Código
 
 - [ ] Cumple los criterios de aceptación de la historia en Jira.
 - [ ] CI en verde (CI roto es red line de la consigna).
-- [ ] `make test-cover` — cobertura ≥ 70% y **no bajó** respecto de antes del
-      PR.
-- [ ] Sin `.env`, credenciales ni claves en el diff (revisar `git status`
-      antes de `git add`).
+- [ ] `make test-all` con el broker levantado. La cobertura se mide así: sin
+      broker los tests de integración se saltan y el número no es real.
+- [ ] Cobertura ≥ 70% y **no bajó** respecto de antes del PR.
+- [ ] Sin `.env`, credenciales ni claves en el diff. Tampoco en los defaults
+      del código.
 - [ ] El PR toca una sola historia de Jira y tiene un reviewer que no es el
       autor.
 
-## Integración
-
-- [ ] Si el PR agrega o cambia un evento que `chat` publica o consume, está
-      reflejado en `discordia-docs/arquitectura/eventos.md` en el mismo PR
-      (ver también `discordia-event-idempotency` y
-      `discordia-rabbitmq-topology` para la implementación).
-- [ ] Si expone un endpoint HTTP nuevo, está en el contrato OpenAPI del
-      servicio.
-- [ ] Levanta con el `docker-compose` compartido sin pasos manuales extra.
-
 ## Documentación
 
-- [ ] Si hubo una decisión de diseño (tecnología, contrato entre servicios),
-      quedó en un ADR — ver `discordia-adr-routing` para decidir si va en
-      `discordia-docs/adr` o en el `adr/` de este servicio.
-- [ ] El README dice cómo correr el servicio y qué variables de entorno
-      necesita (`.env.example` actualizado si se agregó una nueva).
-- [ ] La historia está en el estado correcto en Jira.
+- [ ] Si hubo una decisión de diseño, quedó en un ADR o en el README — ver
+      `discordia-adr-routing` para decidir dónde.
+- [ ] El README explica cómo usar lo que se agregó, no solo que existe.
 
 ## Lo que NO es parte de "done"
 
