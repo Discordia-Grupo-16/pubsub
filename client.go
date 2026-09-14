@@ -25,6 +25,7 @@ type Client struct {
 	mu        sync.Mutex
 	conn      *amqp.Connection
 	publishCh *amqp.Channel
+	subs      []*subscription
 	closed    bool
 
 	shutdown chan struct{}
@@ -248,6 +249,10 @@ func (c *Client) reconnect() bool {
 
 		if err := c.connect(ctx); err != nil {
 			c.logger.Warn("reconnect failed", "attempt", attempt, "error", err)
+			continue
+		}
+		if err := c.restartSubscriptions(); err != nil {
+			c.logger.Warn("resubscribe failed", "attempt", attempt, "error", err)
 			continue
 		}
 
