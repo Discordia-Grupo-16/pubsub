@@ -3,6 +3,7 @@ package pubsub
 import (
 	"errors"
 	"testing"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/stretchr/testify/assert"
@@ -86,6 +87,12 @@ func testConfig() Config {
 		ServiceName:        "chat",
 		Prefetch:           16,
 		MaxRetries:         3,
+
+		RetryInitialDelay:     200 * time.Millisecond,
+		RetryMaxDelay:         5 * time.Second,
+		PublishTimeout:        5 * time.Second,
+		ReconnectInitialDelay: 500 * time.Millisecond,
+		ReconnectMaxDelay:     30 * time.Second,
 	}
 }
 
