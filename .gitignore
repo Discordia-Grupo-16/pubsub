@@ -24,3 +24,6 @@ go.work.sum
 # IDE
 .vscode/
 .idea/
+
+# Contexto local de trabajo (enunciado, minutas, planes) — no se publica
+/contextoLocal/

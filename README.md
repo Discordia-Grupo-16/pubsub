@@ -1,48 +1,40 @@
-# discordia-chat
+# discordia-pubsub
 
-Servicio de mensajería en tiempo real de Discordia (Go + MongoDB + RabbitMQ +
-WebSocket).
+Cliente compartido de Pub/Sub sobre RabbitMQ para los servicios de Discordia
+(**INF-06**). Una sola implementación de publish/subscribe, en Go y en Python,
+que todos los servicios usan en vez de hablarle a RabbitMQ por su cuenta.
 
-## Stack
+> Este repositorio es una **librería**, no un servicio: no expone HTTP, no
+> tiene base de datos y no se despliega solo.
 
-- Go 1.23, `testify` para tests.
-- MongoDB para persistencia (`internal/repository`).
-- RabbitMQ como bus de eventos (`internal/bus`) — ver
-  [`discordia-docs/arquitectura/eventos.md`](https://github.com/Discordia-Grupo-16/discordia-docs/blob/dev/arquitectura/eventos.md).
-- Hub de WebSocket para tiempo real (`internal/realtime`).
-- Config 100% por variables de entorno (`internal/config`, ver
-  `.env.example`).
-- Logging con `slog` (JSON).
+## Por qué existe
 
-## Cómo correrlo
+[ADR-0003](https://github.com/Discordia-Grupo-16/discordia-docs/blob/dev/adr/0003-tecnologia-del-bus-pubsub.md)
+eligió RabbitMQ y dejó dos topologías distintas sobre el mismo broker: colas
+compartidas para eventos de dominio y colas por instancia para el fan-out de
+mensajería. Confundirlas **no tira error**, solo hace que a algunos clientes
+no les llegue nada. Este cliente encapsula esa diferencia detrás de una API
+única para que ningún servicio la tenga que resolver de nuevo.
 
-```bash
-cp .env.example .env
-go run ./cmd/server
-```
+Además concentra, una vez y para los ocho servicios, el envelope de eventos de
+INF-02, el ack manual, el `prefetch`, el backoff, la dead-letter queue y la
+reconexión al broker.
 
-| Variable | Default | Para qué |
-|---|---|---|
-| `APP_ENV` | `development` | Entorno del proceso |
-| `PORT` | `8080` | Puerto HTTP/WS |
-| `MONGO_URI` | `mongodb://localhost:27017` | Conexión a MongoDB |
-| `MONGO_DB_NAME` | `discordia_chat` | Base de Mongo |
-| `LOG_LEVEL` | `info` | Nivel de `slog` |
-| `MONGO_MIN_POOL_SIZE` | `0` | Conexiones mínimas que el driver mantiene abiertas |
-| `MONGO_MAX_POOL_SIZE` | `100` | Tope del pool de conexiones a Mongo |
-| `MONGO_CONNECT_TIMEOUT` | `5s` | Timeout de la conexión TCP inicial |
-| `MONGO_SERVER_SELECTION_TIMEOUT` | `5s` | Timeout para que el driver encuentre un servidor apto |
-| `MONGO_OPERATION_TIMEOUT` | `10s` | Timeout por defecto de cada operación (CSOT) |
+## Estado
 
-```bash
-make test         # go test ./...
-make test-cover    # cobertura; umbral 70% validado en CI
-```
+En construcción. La API, las variables de entorno y la política de reintentos
+se documentan acá a medida que se implementan.
+
+## Estructura
+
+| Ruta | Qué es |
+|---|---|
+| `/` | Cliente Go — `import "github.com/Discordia-Grupo-16/pubsub"` |
+| `python/` | Cliente Python — paquete `discordia_pubsub` |
 
 ## Herramientas de Generación de código con IA (CLAUDE)
 
 ### Plugins de la comunidad
-
 
 ```bash
 claude plugin marketplace add samber/cc
@@ -57,46 +49,29 @@ claude plugin install git-workflow@netresearch-claude-code-marketplace
 - **`cc-skills-golang`** ([samber/cc-skills-golang](https://github.com/samber/cc-skills-golang)):
   ~46 skills de Go idiomático. Se instala como un solo plugin — no hay forma
   de instalar solo un subconjunto por CLI — pero cada skill dispara sola
-  según su propia descripción (`Apply when...`), así que instalar el paquete
-  completo no significa que las 46 se usen todo el tiempo. Las que
-  efectivamente van a disparar en este código, por lo que ya usa o por lo que
-  pide la [Definition of Done](https://github.com/Discordia-Grupo-16/discordia-docs/blob/dev/procesos/definition-of-done.md)
-  del equipo:
+  según su propia descripción (`Apply when...`). Las que efectivamente van a
+  disparar en una librería de mensajería como esta:
 
   | Skill | Por qué aplica acá |
   |---|---|
-  | `golang-stretchr-testify` | El repo ya usa `testify` (`internal/config/config_test.go`) |
-  | `golang-testing` | Tests table-driven, cobertura, `t.Setenv` |
-  | `golang-error-handling` | Manejo de errores en las cuatro capas de `internal/` |
-  | `golang-safety` | Nil/maps concurrentes — relevante para el estado del hub de `internal/realtime` |
-  | `golang-concurrency` | Hub de WebSocket + consumers de RabbitMQ, ambos con goroutines propias |
-  | `golang-observability` | El logger de `cmd/server/main.go` ya es `slog` |
-  | `golang-security` | Secretos, PII en logs — la red line del [ADR-0007](https://github.com/Discordia-Grupo-16/discordia-docs/blob/dev/adr/0007-gestion-de-secretos.md) |
-  | `golang-code-style`, `golang-naming`, `golang-documentation`, `golang-structs-interfaces` | Calidad de código general |
-  | `golang-context` | Propagación de `context` entre `transport` → `domain`/`repository`/`bus` |
-  | `golang-lint` | Legibilidad de código |
-  | `golang-continuous-integration` | CI/Dockerfile |
+  | `golang-concurrency` | Consumers, reconexión y shutdown, todo con goroutines propias |
+  | `golang-safety` | Estado compartido entre el loop de consumo y el resto del proceso |
+  | `golang-context` | Cancelación de publishes y de subscripciones vía `context` |
+  | `golang-error-handling` | La distinción transitorio vs. permanente es el corazón de este cliente |
+  | `golang-testing`, `golang-stretchr-testify` | Tests table-driven y el fake en memoria |
+  | `golang-observability` | Logging estructurado de reintentos y dead-letters |
+  | `golang-structs-interfaces`, `golang-naming`, `golang-documentation` | Es API pública: la usan otros seis repos |
   | `golang-dependency-management` | `go.mod`/`go.sum`, `govulncheck` |
-  | `golang-project-layout` | Refuerza el layout `cmd/internal` ya adoptado |
-  | `golang-swagger` | La DoD exige contrato OpenAPI para los endpoints que expone el servicio |
-  | `golang-design-patterns` | Graceful shutdown de Mongo/RabbitMQ/WS al cerrar el proceso |
-
+  | `golang-security` | Credenciales del broker por entorno, nunca en el código |
 
 - **`git-workflow`** ([netresearch/git-workflow-skill](https://github.com/netresearch/git-workflow-skill)):
   conventional commits, estrategias de branching, PR/review. Útil para
   mantener consistencia con
   [`discordia-docs/procesos/git-workflow.md`](https://github.com/Discordia-Grupo-16/discordia-docs/blob/dev/procesos/git-workflow.md)
-  entre los distintos repos de servicio.
+  entre los distintos repos.
 
 ### Skills propias de este repo
 
 En `.claude/skills/`, cargadas automáticamente para cualquiera que trabaje en
-este repo con Claude Code:
-
-| Skill | Uso / propósito |
-|---|---|
-| [`discordia-rabbitmq-topology`](.claude/skills/discordia-rabbitmq-topology/SKILL.md) | Al declarar una cola o consumer en `internal/bus`: cuándo usar cola compartida (proyecciones que escriben en Mongo) vs. cola exclusive/auto-delete por instancia (`chat.message.sent`, fan-out a los clientes WebSocket de cada instancia). |
-| [`discordia-event-idempotency`](.claude/skills/discordia-event-idempotency/SKILL.md) | Al escribir un handler de evento: idempotencia por `eventId` en inserts, patrón `lastEventAt` en proyecciones locales, ack manual post-proceso, backoff y dead-letter queue. |
-| [`discordia-dod-checklist`](.claude/skills/discordia-dod-checklist/SKILL.md) | Antes de pedir review o cerrar una historia: cobertura que no baje, sin secretos, evento nuevo agregado a `eventos.md`, contrato OpenAPI, README con env vars. |
-| [`discordia-adr-routing`](.claude/skills/discordia-adr-routing/SKILL.md) | Al evaluar una decisión de diseño: si hace falta un ADR, y si va en `discordia-docs/adr` (transversal) o en el `adr/` de este servicio, con qué numeración. |
-| [`discordia-api-event-conventions`](.claude/skills/discordia-api-event-conventions/SKILL.md) | Al agregar un endpoint HTTP o un evento nuevo: recursos en plural, `camelCase`, forma de error estándar, naming `<servicio>.<agregado>.<evento-en-pasado>`, UUID v4, fechas UTC con `Z`. |
+este repo con Claude Code: topología de colas, idempotencia y reintentos,
+convenciones de eventos, ruteo de ADRs y el checklist de Definition of Done.
