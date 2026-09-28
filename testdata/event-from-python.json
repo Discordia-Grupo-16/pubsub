@@ -1,0 +1,13 @@
+{
+  "eventId": "2c7e4b91-8a3d-4e52-b6f0-7d1c9a4e8b23",
+  "eventType": "identity.user.registered",
+  "eventVersion": 1,
+  "occurredAt": "2026-09-13T20:00:00.123456Z",
+  "correlationId": "8b2d0b7e-4f3a-4c1b-9a1e-2c5d7f0a3b64",
+  "causationId": "c3a9f1d2-5e6b-4a70-8f21-9d4e7b0c5a38",
+  "producer": "identity",
+  "data": {
+    "userId": "4f5e6d7c-8b9a-40e1-a2b3-c4d5e6f70819",
+    "email": "demo@discordia.test"
+  }
+}

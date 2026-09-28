@@ -24,3 +24,14 @@ go.work.sum
 # IDE
 .vscode/
 .idea/
+
+# Contexto local de trabajo (enunciado, minutas, planes) — no se publica
+/contextoLocal/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+*.egg-info/
+.venv/
