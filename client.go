@@ -176,6 +176,27 @@ func (c *Client) Publish(ctx context.Context, event Envelope) error {
 	return nil
 }
 
+// ErrNotReady indica que el cliente no tiene una conexión usable con el
+// broker en este momento, por ejemplo mientras se reconecta.
+var ErrNotReady = errors.New("pubsub client is not connected to the broker")
+
+// Ready responde si el cliente puede publicar ahora: devuelve nil cuando la
+// conexión y el canal de publicación están abiertos. No hace ida y vuelta al
+// broker (es lo que se llama desde un /readyz) y mira solo el estado local,
+// que amqp091 actualiza apenas detecta el corte.
+func (c *Client) Ready(_ context.Context) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.closed {
+		return ErrClosed
+	}
+	if c.conn == nil || c.conn.IsClosed() || c.publishCh == nil || c.publishCh.IsClosed() {
+		return ErrNotReady
+	}
+	return nil
+}
+
 // publishing arma el mensaje AMQP. Los identificadores del sobre se repiten
 // en las propiedades del mensaje para que se vean en la management UI sin
 // tener que abrir el body.
