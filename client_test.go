@@ -64,6 +64,19 @@ func TestPublish_OnClosedClient(t *testing.T) {
 	assert.ErrorIs(t, err, ErrClosed)
 }
 
+func TestReady_OnClosedClient(t *testing.T) {
+	client := &Client{cfg: testConfig(), logger: slog.New(discardHandler()), shutdown: make(chan struct{}), closed: true}
+
+	assert.ErrorIs(t, client.Ready(context.Background()), ErrClosed)
+}
+
+func TestReady_WithoutConnection(t *testing.T) {
+	client := &Client{cfg: testConfig(), logger: slog.New(discardHandler()), shutdown: make(chan struct{})}
+
+	assert.ErrorIs(t, client.Ready(context.Background()), ErrNotReady,
+		"mientras se reconecta no hay conexión: el servicio no está listo para publicar")
+}
+
 func TestClose_IsIdempotent(t *testing.T) {
 	client := &Client{cfg: testConfig(), logger: slog.New(discardHandler()), shutdown: make(chan struct{})}
 
