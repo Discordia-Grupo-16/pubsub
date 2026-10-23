@@ -58,6 +58,9 @@ event, err := pubsub.NewEnvelope("chat.message.sent", "chat", MessageSent{
 }, pubsub.WithCorrelationID(correlationID))
 
 err = client.Publish(ctx, event)
+
+// Para un /readyz: nil si la conexión y el canal de publicación están abiertos.
+err = client.Ready(ctx)
 ```
 
 ```python
